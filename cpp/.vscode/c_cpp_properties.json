@@ -1,0 +1,17 @@
+{
+    "configurations": [
+        {
+            "name": "MinGW-W64",
+            "includePath": [
+                "${workspaceFolder}/**",
+                "C:/Users/Suryansh/vcpkg/installed/x64-mingw-static/include"
+            ],
+            "defines": [],
+            "compilerPath": "C:/mingw-w64/mingw64/bin/g++.exe",
+            "cStandard": "c11",
+            "cppStandard": "c++11",
+            "intelliSenseMode": "gcc-x64"
+        }
+    ],
+    "version": 4
+}
