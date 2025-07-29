@@ -6,7 +6,7 @@ const authMiddleware = require('../middleware/authMiddleware');
 router.get('/nearby', authMiddleware(['citizen']), dustbinController.getNearbyDustbins);
 router.get('/prioritized', authMiddleware(['worker', 'admin']), dustbinController.getPrioritizedDustbins);
 router.get('/available', authMiddleware(['citizen']), dustbinController.getAvailableDustbins);
-router.post('/add', authMiddleware(['admin']), dustbinController.addDustbin);
+router.post('/add', authMiddleware(['worker','admin']), dustbinController.addDustbin);
 router.post('/update', authMiddleware(['worker']), dustbinController.updateDustbinStatus);
 
 module.exports = router;
