@@ -3,6 +3,7 @@ import { AuthProvider } from './context/AuthContext';
 import Navbar from './components/Navbar';
 import Home from './pages/Home';
 import Login from './components/Login';
+import Register from './components/Register';
 import WorkerDashboard from './pages/WorkerDashboard';
 import UserDashboard from './pages/UserDashboard';
 
@@ -16,6 +17,7 @@ function App() {
           <Route path="/login" element={<Login />} />
           <Route path="/contributer" element={<WorkerDashboard />} />
           <Route path="/user" element={<UserDashboard />} />
+          <Route path="/register" element={<Register/>}/>
         </Routes>
       </Router>
     </AuthProvider>

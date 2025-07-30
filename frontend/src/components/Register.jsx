@@ -1,70 +1,50 @@
 import { useState, useContext } from 'react';
 import axios from 'axios';
-import { useLocation, useNavigate } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
-import { FaEye, FaEyeSlash, FaArrowLeft } from 'react-icons/fa';
 import { AuthContext } from '../context/AuthContext';
-import './Login.css';
+import './Register.css';
 
-export default function Login() {
-  const location = useLocation();
-  const navigate = useNavigate();
-  const { login } = useContext(AuthContext);
-  const roleFromHome = location.state?.role || 'citizen';
+export default function Register() {
   const [credentials, setCredentials] = useState({
     username: '',
     password: '',
+    role: 'citizen',
   });
   const [error, setError] = useState('');
   const [isLoading, setIsLoading] = useState(false);
-  const [showPassword, setShowPassword] = useState(false);
+  const { login } = useContext(AuthContext);
+  const navigate = useNavigate();
 
-  const handleLogin = async (e) => {
+  const handleRegister = async (e) => {
     e.preventDefault();
     setError('');
     setIsLoading(true);
     try {
       const res = await axios.post(
-        `${import.meta.env.VITE_API_BASE_URL}/auth/login`,
+        `${import.meta.env.VITE_API_BASE_URL}/auth/register`,
         credentials
       );
       const { token, user } = res.data;
-    login(token, user.role);
-      if (user.role === 'citizen' && roleFromHome === 'citizen') {
-        navigate('/user');
-      } else if (user.role === 'worker' && roleFromHome === 'worker') {
-        navigate('/contributer');
-      } else {
-        setError(
-          `You are not authorized to log in as a ${roleFromHome}. Your role is ${user.role}.`
-        );
-      }
+      login(token, user.role);
+      navigate(user.role === 'citizen' ? '/user' : '/worker');
     } catch (error) {
-      setError(error.response?.data?.error || 'Login failed. Please try again.');
-      console.error('Login failed', error);
+      setError(error.response?.data?.error || 'Registration failed. Please try again.');
     } finally {
       setIsLoading(false);
     }
   };
 
-  const togglePasswordVisibility = () => {
-    setShowPassword(!showPassword);
-  };
-
   return (
-    <div className="login-container">
+    <div className="register-container">
       <motion.div
-        className="login-form"
+        className="register-form"
         initial={{ opacity: 0, scale: 0.8 }}
         animate={{ opacity: 1, scale: 1 }}
         transition={{ duration: 0.5 }}
       >
-        <a href="/" className="back-link">
-          <FaArrowLeft /> Back to Home
-        </a>
-        <h2>Login as {roleFromHome === 'worker' ? 'Contributer' : 'citizen'}</h2>
-
-        <form onSubmit={handleLogin}>
+        <h2>Register</h2>
+        <form onSubmit={handleRegister}>
           <div className="input-group">
             <input
               type="text"
@@ -76,9 +56,9 @@ export default function Login() {
               required
             />
           </div>
-          <div className="input-group password-group">
+          <div className="input-group">
             <input
-              type={showPassword ? 'text' : 'password'}
+              type="password"
               placeholder="Password"
               value={credentials.password}
               onChange={(e) =>
@@ -86,13 +66,17 @@ export default function Login() {
               }
               required
             />
-            <button
-              type="button"
-              className="toggle-password"
-              onClick={togglePasswordVisibility}
+          </div>
+          <div className="input-group">
+            <select
+              value={credentials.role}
+              onChange={(e) =>
+                setCredentials({ ...credentials, role: e.target.value })
+              }
             >
-              {showPassword ? <FaEyeSlash /> : <FaEye />}
-            </button>
+              <option value="citizen">Citizen</option>
+              <option value="worker">Worker</option>
+            </select>
           </div>
           <AnimatePresence>
             {error && (
@@ -108,18 +92,14 @@ export default function Login() {
           </AnimatePresence>
           <motion.button
             type="submit"
-            className="login-btn"
+            className="register-btn"
             disabled={isLoading}
             whileHover={{ scale: 1.05 }}
             whileTap={{ scale: 0.95 }}
           >
-            {isLoading ? <span className="spinner"></span> : 'Login'}
+            {isLoading ? <span className="spinner"></span> : 'Register'}
           </motion.button>
-          <a href="/forgot-password" className="forgot-password">
-            Forgot Password?
-          </a>
         </form>
-        <a href="/register" className='register-link'>New User? Create Account</a>
       </motion.div>
     </div>
   );

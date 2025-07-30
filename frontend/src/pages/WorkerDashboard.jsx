@@ -90,7 +90,7 @@ export default function WorkerDashboard() {
 
   const handleLogout = () => {
     logout();
-    navigate('/login');
+    navigate('/');
   };
 
   useEffect(() => {

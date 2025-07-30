@@ -39,7 +39,7 @@ export default function UserDashboard() {
 
   const handleLogout = () => {
     logout();
-    navigate('/login');
+    navigate('/');
   };
 
   const filteredDustbins = filterFull
