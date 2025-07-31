@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import axios from "axios";
 import { useNavigate } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
+import AddDustbinsModel from "../components/AddDustbins";
 import {
   FaSync,
   FaFilter,
@@ -15,6 +16,7 @@ import Map from "../components/Map";
 import DustbinList from "../components/DustbinList";
 import { useAuth } from "../context/AuthContext";
 import "./WorkerDashboard.css";
+import AddDustbins from "../components/AddDustbins";
 
 export default function WorkerDashboard() {
   const [prioritizedDustbins, setPrioritizedDustbins] = useState([]);
@@ -40,7 +42,7 @@ export default function WorkerDashboard() {
     search: "",
   });
   const [filterFull, setFilterFull] = useState(false);
-  const [filterType, setFilterType] = useState("all"); 
+  const [filterType, setFilterType] = useState("all");
   const [userLocation, setUserLocation] = useState(null);
   const [destination, setDestination] = useState(null);
 
@@ -50,7 +52,8 @@ export default function WorkerDashboard() {
   const getLocation = () => {
     return new Promise((resolve, reject) => {
       navigator.geolocation.getCurrentPosition(
-        (pos) => resolve({ lat: pos.coords.latitude, lng: pos.coords.longitude }),
+        (pos) =>
+          resolve({ lat: pos.coords.latitude, lng: pos.coords.longitude }),
         (err) => reject(err)
       );
     });
@@ -64,7 +67,11 @@ export default function WorkerDashboard() {
         `${import.meta.env.VITE_API_BASE_URL}/dustbins/prioritized`,
         { headers: { Authorization: `Bearer ${token}` } }
       );
-      setPrioritizedDustbins(res.data);
+      const data = res.data.map((d) => ({
+        ...d,
+        fillLevel: Number(d.fill_level) || 0,
+      }));
+      setPrioritizedDustbins(data);
     } catch (err) {
       setError((prev) => ({
         ...prev,
@@ -88,8 +95,12 @@ export default function WorkerDashboard() {
           params: { latitude: location.lat, longitude: location.lng, radius: 10 },
         }
       );
-      setNearbyDustbins(res.data);
-      localStorage.setItem('lastWorkerSearch', JSON.stringify({ location, timestamp: Date.now() }));
+      const data = res.data.map((d) => ({
+        ...d,
+        fillLevel: Number(d.fill_level) || 0,
+      }));
+      setNearbyDustbins(data);
+      localStorage.setItem("lastWorkerSearch", JSON.stringify({ location, timestamp: Date.now() }));
     } catch (err) {
       setError((prev) => ({
         ...prev,
@@ -100,6 +111,7 @@ export default function WorkerDashboard() {
     }
   };
 
+
   const searchLocation = async () => {
     if (!searchQuery) return;
     setLoading((prev) => ({ ...prev, search: true }));
@@ -108,7 +120,7 @@ export default function WorkerDashboard() {
       const res = await axios.get(
         `https://nominatim.openstreetmap.org/search`,
         {
-          params: { q: searchQuery, format: 'json', limit: 5 },
+          params: { q: searchQuery, format: "json", limit: 5 },
         }
       );
       setSearchResults(res.data);
@@ -157,7 +169,10 @@ export default function WorkerDashboard() {
       fetchPrioritized();
       fetchNearby();
     } catch (err) {
-      setError((prev) => ({ ...prev, form: "Failed to mark dustbin as serviced." }));
+      setError((prev) => ({
+        ...prev,
+        form: "Failed to mark dustbin as serviced.",
+      }));
     }
   };
 
@@ -168,7 +183,7 @@ export default function WorkerDashboard() {
 
   useEffect(() => {
     if (token) {
-      const lastSearch = JSON.parse(localStorage.getItem('lastWorkerSearch'));
+      const lastSearch = JSON.parse(localStorage.getItem("lastWorkerSearch"));
       if (lastSearch) {
         setUserLocation(lastSearch.location);
         fetchNearby();
@@ -187,14 +202,16 @@ export default function WorkerDashboard() {
   const filteredPrioritized = prioritizedDustbins.filter((dustbin) => {
     if (filterFull && dustbin.fillLevel < 80) return false;
     if (filterType === "recyclable") return dustbin.type === "recyclable";
-    if (filterType === "non-recyclable") return dustbin.type === "non-recyclable";
+    if (filterType === "non-recyclable")
+      return dustbin.type === "non-recyclable";
     return true;
   });
 
   const filteredNearby = nearbyDustbins.filter((dustbin) => {
     if (filterFull && dustbin.fillLevel < 80) return false;
     if (filterType === "recyclable") return dustbin.type === "recyclable";
-    if (filterType === "non-recyclable") return dustbin.type === "non-recyclable";
+    if (filterType === "non-recyclable")
+      return dustbin.type === "non-recyclable";
     return true;
   });
 
@@ -336,135 +353,34 @@ export default function WorkerDashboard() {
             </div>
             <div className="stat-card">
               <h3>
-                {[...filteredPrioritized, ...filteredNearby].filter(
-                  (d) => d.fillLevel >= 80
-                ).length}
+                {
+                  [...filteredPrioritized, ...filteredNearby].filter(
+                    (d) => d.fillLevel >= 80
+                  ).length
+                }
               </h3>
               <p>Full Dustbins</p>
             </div>
           </motion.div>
 
-          <AnimatePresence>
-            {showForm && (
-              <motion.div
-                className="modal"
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                exit={{ opacity: 0 }}
-              >
-                <div className="modal-content">
-                  <button
-                    className="close-btn"
-                    onClick={() => {
-                      setShowForm(false);
-                      setSearchQuery("");
-                      setSearchResults([]);
-                    }}
-                  >
-                    <FaTimes />
-                  </button>
-                  <h2>Add New Dustbin</h2>
-                  <form onSubmit={handleAddDustbin}>
-                    <div className="input-group">
-                      <input
-                        type="text"
-                        placeholder="Search location (e.g., city, address)"
-                        value={searchQuery}
-                        onChange={(e) => setSearchQuery(e.target.value)}
-                      />
-                      <motion.button
-                        type="button"
-                        className="action-btn"
-                        onClick={searchLocation}
-                        disabled={loading.search}
-                        whileHover={{ scale: 1.05 }}
-                        whileTap={{ scale: 0.95 }}
-                      >
-                        {loading.search ? (
-                          <span className="spinner"></span>
-                        ) : (
-                          "Search"
-                        )}
-                      </motion.button>
-                    </div>
-                    {searchResults.length > 0 && (
-                      <div className="search-results">
-                        {searchResults.map((result) => (
-                          <div
-                            key={result.place_id}
-                            className="search-result"
-                            onClick={() =>
-                              setNewDustbin({
-                                ...newDustbin,
-                                latitude: result.lat,
-                                longitude: result.lon,
-                              })
-                            }
-                          >
-                            {result.display_name}
-                          </div>
-                        ))}
-                      </div>
-                    )}
-                    <div className="input-group">
-                      <input
-                        type="number"
-                        step="any"
-                        placeholder="Latitude"
-                        value={newDustbin.latitude}
-                        onChange={(e) =>
-                          setNewDustbin({
-                            ...newDustbin,
-                            latitude: e.target.value,
-                          })
-                        }
-                        required
-                      />
-                    </div>
-                    <div className="input-group">
-                      <input
-                        type="number"
-                        step="any"
-                        placeholder="Longitude"
-                        value={newDustbin.longitude}
-                        onChange={(e) =>
-                          setNewDustbin({
-                            ...newDustbin,
-                            longitude: e.target.value,
-                          })
-                        }
-                        required
-                      />
-                    </div>
-                    <div className="input-group">
-                      <select
-                        value={newDustbin.type}
-                        onChange={(e) =>
-                          setNewDustbin({ ...newDustbin, type: e.target.value })
-                        }
-                      >
-                        <option value="recyclable">Recyclable</option>
-                        <option value="non-recyclable">Non-Recyclable</option>
-                      </select>
-                    </div>
-                    <motion.button
-                      type="submit"
-                      className="submit-btn"
-                      disabled={loading.form}
-                      whileHover={{ scale: 1.05 }}
-                      whileTap={{ scale: 0.95 }}
-                    >
-                      {loading.form ? (
-                        <span className="spinner"></span>
-                      ) : (
-                        "Submit"
-                      )}
-                    </motion.button>
-                  </form>
-                </div>
-              </motion.div>
-            )}
-          </AnimatePresence>
+      <AnimatePresence>
+  {showForm && (
+    <AddDustbinsModel
+      showForm={showForm}
+      setShowForm={setShowForm}
+      newDustbin={newDustbin}
+      setNewDustbin={setNewDustbin}
+      searchQuery={searchQuery}
+      setSearchQuery={setSearchQuery}
+      searchResults={searchResults}
+      setSearchResults={setSearchResults}
+      searchLocation={searchLocation}
+      handleAddDustbin={handleAddDustbin}
+      loading={loading}
+    />
+  )}
+</AnimatePresence>
+
 
           <div className="content-wrapper">
             <motion.div
