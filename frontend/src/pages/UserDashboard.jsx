@@ -1,8 +1,8 @@
 import { useState, useEffect } from 'react';
 import axios from 'axios';
 import { useNavigate } from 'react-router-dom';
-import { motion, AnimatePresence } from 'framer-motion';
-import { FaSync, FaFilter, FaSignOutAlt, FaBug, FaPlus } from 'react-icons/fa';
+import { motion } from 'framer-motion';
+import { FaSync, FaFilter, FaSignOutAlt, FaBug, FaPlus, FaMap } from 'react-icons/fa';
 import Map from '../components/Map';
 import DustbinList from '../components/DustbinList';
 import { useAuth } from '../context/AuthContext';
@@ -13,6 +13,10 @@ export default function UserDashboard() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [filterFull, setFilterFull] = useState(false);
+  const [filterType, setFilterType] = useState('all'); // 'all', 'recyclable', 'non-recyclable'
+  const [userLocation, setUserLocation] = useState(null);
+  const [destination, setDestination] = useState(null);
+
   const { token, logout } = useAuth();
   const navigate = useNavigate();
 
@@ -31,156 +35,153 @@ export default function UserDashboard() {
     }
   };
 
+  const searchNearbyDustbins = async () => {
+    if (!userLocation) {
+      setError('Please enable location access to search for nearby dustbins.');
+      navigator.geolocation.getCurrentPosition(
+        (position) => {
+          const location = { lat: position.coords.latitude, lng: position.coords.longitude };
+          setUserLocation(location);
+          performNearbySearch(location);
+        },
+        () => setError('Location access denied. Please enable location services.')
+      );
+      return;
+    }
+    performNearbySearch(userLocation);
+  };
+
+  const performNearbySearch = async (location) => {
+    setLoading(true);
+    setError(null);
+    try {
+      const res = await axios.get(`${import.meta.env.VITE_API_BASE_URL}/dustbins/nearby`, {
+        headers: { Authorization: `Bearer ${token}` },
+        params: { latitude: location.lat, longitude: location.lng, radius: 10 },
+      });
+      setDustbins(res.data);
+      localStorage.setItem('lastSearch', JSON.stringify({ location, timestamp: Date.now() }));
+    } catch (error) {
+      setError('Failed to find nearby dustbins. Please try again.');
+    } finally {
+      setLoading(false);
+    }
+  };
+
   useEffect(() => {
-    fetchAvailable();
+    const lastSearch = JSON.parse(localStorage.getItem('lastSearch'));
+    if (lastSearch) {
+      setUserLocation(lastSearch.location);
+      performNearbySearch(lastSearch.location);
+    } else {
+      fetchAvailable();
+    }
     const interval = setInterval(fetchAvailable, 5 * 60 * 1000);
     return () => clearInterval(interval);
   }, [token]);
+
+  useEffect(() => {
+    if (!userLocation) {
+      navigator.geolocation.getCurrentPosition(
+        (position) => setUserLocation({ lat: position.coords.latitude, lng: position.coords.longitude }),
+        () => setError('Please enable location access to use this feature.')
+      );
+    }
+  }, []);
 
   const handleLogout = () => {
     logout();
     navigate('/');
   };
 
-  const filteredDustbins = filterFull
-    ? dustbins.filter((dustbin) => dustbin.fillLevel >= 80)
-    : dustbins;
+  const filteredDustbins = dustbins.filter((dustbin) => {
+    if (filterFull && dustbin.fillLevel < 80) return false;
+    if (filterType === 'recyclable') return dustbin.type === 'recyclable';
+    if (filterType === 'non-recyclable') return dustbin.type === 'non-recyclable';
+    return true;
+  });
 
   return (
     <div className={styles.dashboard}>
-      {/* Header */}
       <header className={styles.header}>
         <h1>User Dashboard</h1>
         <div className={styles.headerActions}>
-          <motion.button
-            className={styles.actionBtn}
-            onClick={fetchAvailable}
-            disabled={loading}
-            whileHover={{ scale: 1.05 }}
-            whileTap={{ scale: 0.95 }}
-          >
+          <motion.button className={styles.actionBtn} onClick={searchNearbyDustbins}>
+            <FaMap /> Search Nearby Dustbins
+          </motion.button>
+          <motion.button className={styles.actionBtn} onClick={fetchAvailable}>
             <FaSync /> Refresh
           </motion.button>
           <motion.button
             className={`${styles.actionBtn} ${filterFull ? styles.active : ''}`}
             onClick={() => setFilterFull(!filterFull)}
-            whileHover={{ scale: 1.05 }}
-            whileTap={{ scale: 0.95 }}
           >
             <FaFilter /> {filterFull ? 'Show All' : 'Full Dustbins'}
           </motion.button>
           <motion.button
-            className={styles.actionBtn}
-            onClick={handleLogout}
-            whileHover={{ scale: 1.05 }}
-            whileTap={{ scale: 0.95 }}
+            className={`${styles.actionBtn} ${filterType !== 'all' ? styles.active : ''}`}
+            onClick={() =>
+              setFilterType(
+                filterType === 'all' ? 'recyclable' : filterType === 'recyclable' ? 'non-recyclable' : 'all'
+              )
+            }
           >
+            <FaFilter /> {filterType === 'all' ? 'Filter by Type' : filterType === 'recyclable' ? 'Recyclable' : 'Non-Recyclable'}
+          </motion.button>
+          <motion.button className={styles.actionBtn} onClick={handleLogout}>
             <FaSignOutAlt /> Logout
           </motion.button>
         </div>
       </header>
 
-      {/* Welcome Message */}
-      <motion.div
-        className={styles.welcome}
-        initial={{ opacity: 0, y: -20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.5 }}
-      >
+      <motion.div className={styles.welcome}>
         <h2>Welcome, Citizen!</h2>
         <p>Monitor and manage nearby dustbins with ease.</p>
       </motion.div>
 
-      {/* Error Message */}
-      <AnimatePresence>
-        {error && (
-          <motion.p
-            className={styles.error}
-            initial={{ opacity: 0, y: -10 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: -10 }}
-          >
-            {error}
-            <button className={styles.retryBtn} onClick={fetchAvailable}>
-              Retry
-            </button>
-          </motion.p>
-        )}
-      </AnimatePresence>
+      {error && (
+        <motion.p className={styles.error}>
+          {error}
+          <button className={styles.retryBtn} onClick={searchNearbyDustbins}>Retry</button>
+        </motion.p>
+      )}
 
-      {/* Loading State */}
-      {loading && (
+      {loading ? (
         <div className={styles.loading}>
           <span className={styles.spinner}></span>
           <p>Loading dustbins...</p>
         </div>
-      )}
-
-      {/* Main Content */}
-      {!loading && !error && (
+      ) : (
         <>
-          {/* Stats Section */}
-          <motion.div
-            className={styles.stats}
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            transition={{ duration: 0.5 }}
-          >
-            <div className={styles.statCard}>
-              <h3>{dustbins.length}</h3>
-              <p>Total Dustbins</p>
-            </div>
-            <div className={styles.statCard}>
-              <h3>{dustbins.filter((d) => d.fillLevel >= 80).length}</h3>
-              <p>Full Dustbins</p>
-            </div>
-            <div className={styles.statCard}>
-              <h3>{dustbins.filter((d) => d.fillLevel < 80).length}</h3>
-              <p>Available Dustbins</p>
-            </div>
-          </motion.div>
-
-          {/* Content Wrapper */}
-          <div className={styles.contentWrapper}>
-            <motion.div
-              className={styles.mapContainer}
-              initial={{ opacity: 0, scale: 0.95 }}
-              animate={{ opacity: 1, scale: 1 }}
-              transition={{ duration: 0.5 }}
-            >
-              <Map dustbins={filteredDustbins} />
-            </motion.div>
-            <motion.div
-              className={styles.listContainer}
-              initial={{ opacity: 0, x: 50 }}
-              animate={{ opacity: 1, x: 0 }}
-              transition={{ duration: 0.5 }}
-            >
-              <DustbinList
-                dustbins={filteredDustbins}
-                title="Available Dustbins"
-                fetchData={fetchAvailable}
-                role="user"
-              />
-            </motion.div>
+          <div className={styles.stats}>
+            <div className={styles.statCard}><h3>{filteredDustbins.length}</h3><p>Total Nearby Dustbins</p></div>
+            <div className={styles.statCard}><h3>{filteredDustbins.filter(d => d.fillLevel >= 80).length}</h3><p>Full Dustbins</p></div>
+            <div className={styles.statCard}><h3>{filteredDustbins.filter(d => d.fillLevel < 80).length}</h3><p>Available Dustbins</p></div>
           </div>
 
-          {/* Action Buttons */}
+          <div className={styles.contentWrapper}>
+            <Map
+              dustbins={filteredDustbins}
+              userLocation={userLocation}
+              destination={destination}
+              setDestination={setDestination}
+            />
+            <DustbinList
+              dustbins={filteredDustbins}
+              userLocation={userLocation}
+              setUserLocation={setUserLocation}
+              setDestination={setDestination}
+            />
+          </div>
+
           <div className={styles.actionButtons}>
-            <motion.button
-              className={styles.actionBtn}
-              whileHover={{ scale: 1.05 }}
-              whileTap={{ scale: 0.95 }}
-              onClick={() => navigate('/report-issue')}
-            >
+            <motion.button onClick={() => setDestination(null)} className={styles.actionBtn}>
+              Clear Route
+            </motion.button>
+            <motion.button onClick={() => navigate('/report-issue')} className={styles.actionBtn}>
               <FaBug /> Report Issue
             </motion.button>
-            <motion.button
-              className={styles.actionBtn}
-              whileHover={{ scale: 1.05 }}
-              whileTap={{ scale: 0.95 }}
-              onClick={() => navigate('/request-dustbin')}
-            >
+            <motion.button onClick={() => navigate('/request-dustbin')} className={styles.actionBtn}>
               <FaPlus /> Request New Dustbin
             </motion.button>
           </div>

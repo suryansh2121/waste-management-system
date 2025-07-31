@@ -31,7 +31,7 @@ exports.findNearbyDustbins = async (latitude, longitude, radius) => {
     const { stdout } = await execFilePromise(
       quadtreePath,
       [lat.toString(), lon.toString(), rad.toString(), binsJson],
-      { cwd: process.cwd() } // Set cwd to backend root
+      { cwd: process.cwd() } 
     );
 
     let dustbinIds;

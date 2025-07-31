@@ -56,7 +56,7 @@ exports.updateDustbinStatus = async (req, res) => {
 
     if (error || !data) return res.status(404).json({ error: "Dustbin not found" });
 
-    req.io.emit("dustbinUpdate", data); // Real-time update
+    req.io.emit("dustbinUpdate", data); 
     res.json(data);
   } catch (error) {
     res.status(500).json({ error: "Failed to update dustbin" });
@@ -88,8 +88,7 @@ exports.getPrioritizedDustbins = async (req, res) => {
     if (error) throw new Error(`Supabase error: ${error.message}`);
     if (!dustbins || dustbins.length === 0) return res.status(200).json([]);
 
-    const prioritizedIds = await getPrioritizedIds(dustbins); // full → empty
-
+    const prioritizedIds = await getPrioritizedIds(dustbins); 
     const { data: resultDustbins, error: fetchError } = await supabase
       .from("dustbins")
       .select("id, latitude, longitude, fill_level, type")
@@ -115,7 +114,7 @@ exports.getAvailableDustbins = async (req, res) => {
     if (error) throw new Error(`Supabase error: ${error.message}`);
     if (!dustbins || dustbins.length === 0) return res.status(200).json([]);
 
-    const prioritizedIds = await getPrioritizedIds(dustbins, true); // empty → full
+    const prioritizedIds = await getPrioritizedIds(dustbins, true);
 
     const { data: resultDustbins, error: fetchError } = await supabase
       .from("dustbins")
