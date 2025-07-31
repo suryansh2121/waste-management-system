@@ -7,15 +7,15 @@ const fs = require("fs");
 
 const execFilePromise = util.promisify(execFile);
 
-
 const sortByIds = (dataArray, orderedIds) => {
   const map = {};
-  dataArray.forEach(item => map[item.id] = item);
-  return orderedIds.map(id => map[id]).filter(Boolean);
+  dataArray.forEach((item) => (map[item.id] = item));
+  return orderedIds.map((id) => map[id]).filter(Boolean);
 };
 
 const getPrioritizedIds = async (dustbins, reverse = false) => {
-  const binaryName = process.platform === "win32" ? "priority_queue.exe" : "priority_queue";
+  const binaryName =
+    process.platform === "win32" ? "priority_queue.exe" : "priority_queue";
   const binaryPath = path.join(process.cwd(), "bin", binaryName);
 
   if (!fs.existsSync(binaryPath)) {
@@ -23,12 +23,20 @@ const getPrioritizedIds = async (dustbins, reverse = false) => {
   }
 
   const dustbinsJson = JSON.stringify(dustbins);
-  console.log("Executing priority queue at:", binaryPath, "with input:", dustbinsJson);
-  
-  const { stdout } = await execFilePromise(binaryPath, [dustbinsJson], { cwd: process.cwd() });
+  console.log(
+    "Executing priority queue at:",
+    binaryPath,
+    "with input:",
+    dustbinsJson
+  );
+
+  const { stdout } = await execFilePromise(binaryPath, [dustbinsJson], {
+    cwd: process.cwd(),
+  });
 
   let ids = JSON.parse(stdout);
-  if (!Array.isArray(ids)) throw new Error("Invalid output from priority_queue");
+  if (!Array.isArray(ids))
+    throw new Error("Invalid output from priority_queue");
 
   return reverse ? ids.reverse() : ids;
 };
@@ -36,13 +44,16 @@ const getPrioritizedIds = async (dustbins, reverse = false) => {
 exports.getNearbyDustbins = async (req, res) => {
   const { latitude, longitude, radius } = req.query;
   try {
-    const dustbins = await locationService.findNearbyDustbins(latitude, longitude, radius);
+    const dustbins = await locationService.findNearbyDustbins(
+      latitude,
+      longitude,
+      radius
+    );
     res.json(dustbins);
   } catch (error) {
     res.status(500).json({ error: error.message });
   }
 };
-
 
 exports.updateDustbinStatus = async (req, res) => {
   const { id, fill_level } = req.body;
@@ -54,9 +65,10 @@ exports.updateDustbinStatus = async (req, res) => {
       .select()
       .single();
 
-    if (error || !data) return res.status(404).json({ error: "Dustbin not found" });
+    if (error || !data)
+      return res.status(404).json({ error: "Dustbin not found" });
 
-    req.io.emit("dustbinUpdate", data); 
+    req.io.emit("dustbinUpdate", data);
     res.json(data);
   } catch (error) {
     res.status(500).json({ error: "Failed to update dustbin" });
@@ -88,22 +100,24 @@ exports.getPrioritizedDustbins = async (req, res) => {
     if (error) throw new Error(`Supabase error: ${error.message}`);
     if (!dustbins || dustbins.length === 0) return res.status(200).json([]);
 
-    const prioritizedIds = await getPrioritizedIds(dustbins); 
+    const prioritizedIds = await getPrioritizedIds(dustbins);
     const { data: resultDustbins, error: fetchError } = await supabase
       .from("dustbins")
       .select("id, latitude, longitude, fill_level, type")
       .in("id", prioritizedIds);
 
-    if (fetchError) throw new Error(`Supabase fetch error: ${fetchError.message}`);
+    if (fetchError)
+      throw new Error(`Supabase fetch error: ${fetchError.message}`);
 
     const sorted = sortByIds(resultDustbins, prioritizedIds);
     res.json(sorted);
   } catch (error) {
     console.error("Error in getPrioritizedDustbins:", error);
-    res.status(500).json({ error: `Failed to prioritize dustbins: ${error.message}` });
+    res
+      .status(500)
+      .json({ error: `Failed to prioritize dustbins: ${error.message}` });
   }
 };
-
 
 exports.getAvailableDustbins = async (req, res) => {
   try {
@@ -121,25 +135,32 @@ exports.getAvailableDustbins = async (req, res) => {
       .select("id, latitude, longitude, fill_level, type")
       .in("id", prioritizedIds);
 
-    if (fetchError) throw new Error(`Supabase fetch error: ${fetchError.message}`);
+    if (fetchError)
+      throw new Error(`Supabase fetch error: ${fetchError.message}`);
 
     const sorted = sortByIds(resultDustbins, prioritizedIds);
     res.json(sorted);
   } catch (error) {
     console.error("Error in getAvailableDustbins:", error);
-    res.status(500).json({ error: `Failed to get available dustbins: ${error.message}` });
+    res
+      .status(500)
+      .json({ error: `Failed to get available dustbins: ${error.message}` });
   }
 };
 
 exports.subscribeToDustbinUpdates = (io) => {
   supabase
     .channel("public:dustbins")
-    .on("postgres_changes", {
-      event: "UPDATE",
-      schema: "public",
-      table: "dustbins"
-    }, (payload) => {
-      io.emit("dustbinUpdate", payload.new);
-    })
+    .on(
+      "postgres_changes",
+      {
+        event: "UPDATE",
+        schema: "public",
+        table: "dustbins",
+      },
+      (payload) => {
+        io.emit("dustbinUpdate", payload.new);
+      }
+    )
     .subscribe();
 };

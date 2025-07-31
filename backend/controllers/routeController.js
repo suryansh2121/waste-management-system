@@ -1,4 +1,4 @@
-const routeService = require('../services/routeServices');
+const routeService = require("../services/routeServices");
 
 exports.getOptimizedRoute = async (req, res) => {
   const { dustbinIds } = req.body;

@@ -3,9 +3,9 @@
   "version": "1.0.0",
   "main": "server.js",
   "scripts": {
-    "start": "node server.js",
+    "start": "chmod +x ./bin/dijkstra ./bin/priority_queue ./bin/quadtree && node server.js",
     "dev": "nodemon server.js",
-    "heroku-postbuild": "cd ../cpp && g++ -o ../backend/bin/quadtree quadtree.cpp -I/usr/include -std=c++17 && g++ -o ../backend/bin/dijkstra dijkstra.cpp -I/usr/include -std=c++17 && g++ -o ../backend/bin/priority_queue priority_queue.cpp -I/usr/include -std=c++17",
+    "build": "cd ../cpp && g++ -o ../backend/bin/quadtree quadtree.cpp -I/usr/include/jsoncpp -std=c++17 && g++ -o ../backend/bin/dijkstra dijkstra.cpp -I/usr/include/jsoncpp -std=c++17 && g++ -o ../backend/bin/priority_queue priority_queue.cpp -I/usr/include/jsoncpp -std=c++17",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "keywords": [
