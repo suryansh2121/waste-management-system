@@ -10,7 +10,7 @@ const pool = new Pool({
 // Test PostgreSQL connection
 (async () => {
   try {
-    console.log('Connecting to PostgreSQL:', process.env.DATABASE_URL.replace(/:([^:@]+)@/, ':****@')); // Hide password
+    console.log('Connecting to PostgreSQL:', process.env.DATABASE_URL.replace(/:([^:@]+)@/, ':****@')); 
     const client = await pool.connect();
     console.log('PostgreSQL connected successfully');
     const res = await client.query('SELECT NOW()');
