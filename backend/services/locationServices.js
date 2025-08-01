@@ -1,4 +1,4 @@
-const { supabase } = require("../config/db");
+const { pool } = require("../config/db");
 const { execFile } = require("child_process");
 const path = require("path");
 const util = require("util");
@@ -13,10 +13,10 @@ exports.findNearbyDustbins = async (latitude, longitude, radius) => {
       throw new Error("Invalid latitude, longitude, or radius");
     }
 
-    const { data: dustbins, error } = await supabase
-      .from("dustbins")
-      .select("id, latitude, longitude, fill_level, type");
-    if (error) throw new Error(`Supabase error: ${error.message}`);
+    const result = await pool.query(
+      "SELECT id, latitude, longitude, fill_level, type FROM dustbins"
+    );
+    const dustbins = result.rows;
     if (!dustbins.length) return [];
 
     const binsJson = JSON.stringify(
@@ -47,14 +47,14 @@ exports.findNearbyDustbins = async (latitude, longitude, radius) => {
     }
 
     if (dustbinIds.length === 0) return [];
-    const { data: nearbyDustbins, error: fetchError } = await supabase
-      .from("dustbins")
-      .select("id, latitude, longitude, fill_level, type")
-      .in("id", dustbinIds);
-    if (fetchError)
-      throw new Error(`Supabase fetch error: ${fetchError.message}`);
+    const nearbyResult = await pool.query(
+      `SELECT id, latitude, longitude, fill_level, type 
+       FROM dustbins 
+       WHERE id = ANY($1)`,
+      [dustbinIds]
+    );
 
-    return nearbyDustbins;
+    return nearbyResult.rows;
   } catch (error) {
     console.error("Error in findNearbyDustbins:", error.message);
     throw new Error(`Failed to find nearby dustbins: ${error.message}`);

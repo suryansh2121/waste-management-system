@@ -1,4 +1,4 @@
-const { supabase } = require("../config/db");
+const { pool } = require("../config/db");
 const { execFile } = require("child_process");
 const fs = require("fs").promises;
 const path = require("path");
@@ -11,13 +11,13 @@ exports.getOptimizedRoute = async (dustbinIds) => {
       throw new Error("Invalid or empty dustbinIds array");
     }
 
-    const { data: dustbins, error } = await supabase
-      .from("dustbins")
-      .select("id, latitude, longitude, fill_level")
-      .in("id", dustbinIds);
-    if (error) {
-      throw new Error(`Supabase error: ${error.message}`);
-    }
+    const result = await pool.query(
+      `SELECT id, latitude, longitude, fill_level 
+       FROM dustbins 
+       WHERE id = ANY($1)`,
+      [dustbinIds]
+    );
+    const dustbins = result.rows;
     if (!dustbins || dustbins.length === 0) {
       throw new Error("No dustbins found for provided IDs");
     }
