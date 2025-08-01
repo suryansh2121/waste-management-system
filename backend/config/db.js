@@ -5,12 +5,15 @@ require('dotenv').config();
 const pool = new Pool({
   connectionString: process.env.DATABASE_URL,
   ssl: { rejectUnauthorized: false },
+  max: 10,
+  idleTimeoutMillis: 10000,
+  family: 4, // Force IPv4
 });
 
 // Test PostgreSQL connection
 (async () => {
   try {
-    console.log('Connecting to PostgreSQL:', process.env.DATABASE_URL.replace(/:([^:@]+)@/, ':****@')); 
+    console.log('Connecting to PostgreSQL:', process.env.DATABASE_URL.replace(/:([^:@]+)@/, ':****@'));
     const client = await pool.connect();
     console.log('PostgreSQL connected successfully');
     const res = await client.query('SELECT NOW()');
@@ -18,13 +21,14 @@ const pool = new Pool({
     client.release();
   } catch (error) {
     console.error('PostgreSQL connection failed:', error.message, error.stack);
-    process.exit(-1); 
+    process.exit(-1);
   }
 })();
 
+// Initialize Supabase client
 const supabase = createClient(process.env.SUPABASE_URL, process.env.SUPABASE_KEY);
 
-
+// Test Supabase client
 (async () => {
   try {
     console.log('Testing Supabase client with URL:', process.env.SUPABASE_URL);
