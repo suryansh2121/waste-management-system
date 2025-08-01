@@ -64,7 +64,7 @@ export default function WorkerDashboard() {
     setError((prev) => ({ ...prev, prioritized: "" }));
     try {
       const res = await axios.get(
-        `${import.meta.env.VITE_API_BASE_URL}/dustbins/prioritized`,
+        `${import.meta.env.VITE_API_BASE_URL}/api/dustbins/prioritized`,
         { headers: { Authorization: `Bearer ${token}` } }
       );
       const data = res.data.map((d) => ({
@@ -89,7 +89,7 @@ export default function WorkerDashboard() {
       const location = await getLocation();
       setUserLocation(location);
       const res = await axios.get(
-        `${import.meta.env.VITE_API_BASE_URL}/dustbins/nearby`,
+        `${import.meta.env.VITE_API_BASE_URL}/api/dustbins/nearby`,
         {
           headers: { Authorization: `Bearer ${token}` },
           params: { latitude: location.lat, longitude: location.lng, radius: 10 },
@@ -142,7 +142,7 @@ export default function WorkerDashboard() {
         type: newDustbin.type,
       };
       await axios.post(
-        `${import.meta.env.VITE_API_BASE_URL}/dustbins/add`,
+        `${import.meta.env.VITE_API_BASE_URL}/api/dustbins/add`,
         payload,
         { headers: { Authorization: `Bearer ${token}` } }
       );
@@ -162,7 +162,7 @@ export default function WorkerDashboard() {
   const handleMarkServiced = async (dustbinId) => {
     try {
       await axios.post(
-        `${import.meta.env.VITE_API_BASE_URL}/dustbins/${dustbinId}/service`,
+        `${import.meta.env.VITE_API_BASE_URL}/api/dustbins/${dustbinId}/service`,
         { fillLevel: 0 },
         { headers: { Authorization: `Bearer ${token}` } }
       );

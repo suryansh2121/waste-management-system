@@ -1,27 +1,27 @@
-import { useState, useContext } from 'react';
-import axios from 'axios';
-import { useLocation, useNavigate } from 'react-router-dom';
-import { motion, AnimatePresence } from 'framer-motion';
-import { FaEye, FaEyeSlash, FaArrowLeft } from 'react-icons/fa';
-import { AuthContext } from '../context/AuthContext';
-import './Login.css';
+import { useState, useContext } from "react";
+import axios from "axios";
+import { useLocation, useNavigate } from "react-router-dom";
+import { motion, AnimatePresence } from "framer-motion";
+import { FaEye, FaEyeSlash, FaArrowLeft } from "react-icons/fa";
+import { AuthContext } from "../context/AuthContext";
+import "./Login.css";
 
 export default function Login() {
   const location = useLocation();
   const navigate = useNavigate();
   const { login } = useContext(AuthContext);
-  const roleFromHome = location.state?.role || 'citizen';
+  const roleFromHome = location.state?.role || "citizen";
   const [credentials, setCredentials] = useState({
-    username: '',
-    password: '',
+    username: "",
+    password: "",
   });
-  const [error, setError] = useState('');
+  const [error, setError] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
 
   const handleLogin = async (e) => {
     e.preventDefault();
-    setError('');
+    setError("");
     setIsLoading(true);
     try {
       const res = await axios.post(
@@ -29,19 +29,21 @@ export default function Login() {
         credentials
       );
       const { token, user } = res.data;
-    login(token, user.role);
-      if (user.role === 'citizen' && roleFromHome === 'citizen') {
-        navigate('/user');
-      } else if (user.role === 'worker' && roleFromHome === 'worker') {
-        navigate('/contributer');
+      login(token, user.role);
+      if (user.role === "citizen" && roleFromHome === "citizen") {
+        navigate("/user");
+      } else if (user.role === "worker" && roleFromHome === "worker") {
+        navigate("/contributer");
       } else {
         setError(
           `You are not authorized to log in as a ${roleFromHome}. Your role is ${user.role}.`
         );
       }
     } catch (error) {
-      setError(error.response?.data?.error || 'Login failed. Please try again.');
-      console.error('Login failed', error);
+      setError(
+        error.response?.data?.error || "Login failed. Please try again."
+      );
+      console.error("Login failed", error);
     } finally {
       setIsLoading(false);
     }
@@ -62,7 +64,9 @@ export default function Login() {
         <a href="/" className="back-link">
           <FaArrowLeft /> Back to Home
         </a>
-        <h2>Login as {roleFromHome === 'worker' ? 'Contributer' : 'citizen'}</h2>
+        <h2>
+          Login as {roleFromHome === "worker" ? "Contributer" : "citizen"}
+        </h2>
 
         <form onSubmit={handleLogin}>
           <div className="input-group">
@@ -78,7 +82,7 @@ export default function Login() {
           </div>
           <div className="input-group password-group">
             <input
-              type={showPassword ? 'text' : 'password'}
+              type={showPassword ? "text" : "password"}
               placeholder="Password"
               value={credentials.password}
               onChange={(e) =>
@@ -113,13 +117,15 @@ export default function Login() {
             whileHover={{ scale: 1.05 }}
             whileTap={{ scale: 0.95 }}
           >
-            {isLoading ? <span className="spinner"></span> : 'Login'}
+            {isLoading ? <span className="spinner"></span> : "Login"}
           </motion.button>
           <a href="/forgot-password" className="forgot-password">
             Forgot Password?
           </a>
         </form>
-        <a href="/register" className='register-link'>New User? Create Account</a>
+        <a href="/register" className="register-link">
+          New User? Create Account
+        </a>
       </motion.div>
     </div>
   );

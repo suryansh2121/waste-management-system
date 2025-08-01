@@ -1,24 +1,26 @@
-import { useState, useContext } from 'react';
-import axios from 'axios';
-import { useNavigate } from 'react-router-dom';
-import { motion, AnimatePresence } from 'framer-motion';
-import { AuthContext } from '../context/AuthContext';
-import './Register.css';
+import { useState, useContext } from "react";
+import axios from "axios";
+import { useNavigate } from "react-router-dom";
+import { motion, AnimatePresence } from "framer-motion";
+import { AuthContext } from "../context/AuthContext";
+import "./Register.css";
+import { FaEye, FaEyeSlash } from "react-icons/fa";
 
 export default function Register() {
   const [credentials, setCredentials] = useState({
-    username: '',
-    password: '',
-    role: 'citizen',
+    username: "",
+    password: "",
+    role: "citizen",
   });
-  const [error, setError] = useState('');
+  const [error, setError] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const { login } = useContext(AuthContext);
+  const [showPassword, setShowPassword] = useState(false);
   const navigate = useNavigate();
 
   const handleRegister = async (e) => {
     e.preventDefault();
-    setError('');
+    setError("");
     setIsLoading(true);
     try {
       const res = await axios.post(
@@ -27,12 +29,17 @@ export default function Register() {
       );
       const { token, user } = res.data;
       login(token, user.role);
-      navigate(user.role === 'citizen' ? '/user' : '/worker');
+      navigate(user.role === "citizen" ? "/user" : "/contributer");
     } catch (error) {
-      setError(error.response?.data?.error || 'Registration failed. Please try again.');
+      setError(
+        error.response?.data?.error || "Registration failed. Please try again."
+      );
     } finally {
       setIsLoading(false);
     }
+  };
+  const togglePasswordVisibility = () => {
+    setShowPassword(!showPassword);
   };
 
   return (
@@ -58,7 +65,7 @@ export default function Register() {
           </div>
           <div className="input-group">
             <input
-              type="password"
+              type={showPassword ? "text" : "password"}
               placeholder="Password"
               value={credentials.password}
               onChange={(e) =>
@@ -66,6 +73,13 @@ export default function Register() {
               }
               required
             />
+            <button
+              type="button"
+              className="toggle-password"
+              onClick={togglePasswordVisibility}
+            >
+              {showPassword ? <FaEyeSlash /> : <FaEye />}
+            </button>
           </div>
           <div className="input-group">
             <select
@@ -97,7 +111,7 @@ export default function Register() {
             whileHover={{ scale: 1.05 }}
             whileTap={{ scale: 0.95 }}
           >
-            {isLoading ? <span className="spinner"></span> : 'Register'}
+            {isLoading ? <span className="spinner"></span> : "Register"}
           </motion.button>
         </form>
       </motion.div>

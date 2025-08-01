@@ -24,7 +24,7 @@ export default function UserDashboard() {
     setLoading(true);
     setError(null);
     try {
-      const res = await axios.get(`${import.meta.env.VITE_API_BASE_URL}/dustbins/available`, {
+      const res = await axios.get(`${import.meta.env.VITE_API_BASE_URL}/api/dustbins/available`, {
         headers: { Authorization: `Bearer ${token}` },
       });
       setDustbins(res.data);
@@ -55,7 +55,7 @@ export default function UserDashboard() {
     setLoading(true);
     setError(null);
     try {
-      const res = await axios.get(`${import.meta.env.VITE_API_BASE_URL}/dustbins/nearby`, {
+      const res = await axios.get(`${import.meta.env.VITE_API_BASE_URL}/api/dustbins/nearby`, {
         headers: { Authorization: `Bearer ${token}` },
         params: { latitude: location.lat, longitude: location.lng, radius: 10 },
       });
