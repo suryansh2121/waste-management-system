@@ -25,7 +25,7 @@ export default function Login() {
     setIsLoading(true);
     try {
       const res = await axios.post(
-        `${import.meta.env.VITE_API_BASE_URL}/auth/login`,
+        `${import.meta.env.VITE_API_BASE_URL}/api/auth/login`,
         credentials
       );
       const { token, user } = res.data;
