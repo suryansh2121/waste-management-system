@@ -18,14 +18,13 @@ const pool = new Pool({
     client.release();
   } catch (error) {
     console.error('PostgreSQL connection failed:', error.message, error.stack);
-    process.exit(-1); // Crash app to ensure logs are visible
+    process.exit(-1); 
   }
 })();
 
-// Initialize Supabase client
 const supabase = createClient(process.env.SUPABASE_URL, process.env.SUPABASE_KEY);
 
-// Test Supabase client (optional)
+
 (async () => {
   try {
     console.log('Testing Supabase client with URL:', process.env.SUPABASE_URL);
